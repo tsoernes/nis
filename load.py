@@ -2,9 +2,6 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
-import pandas_ml as pdml
-import sklearn as skl
-import xgboost as xgb
 
 from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches,
                         no_nans, none_cat, none_to_nan_ip, none_unspec,
@@ -57,95 +54,98 @@ from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
 # Note that the gblinear booster treats missing values as zeros.
 #
 
-df = pd.read_csv('TrainAndValid.csv', na_values=not_applicable)
-# df = pd.read_csv('TrainAndValid.csv', parse_dates=['saledate'], na_values=not_applicable)
 
-# fiModelDesc has disaggregations
-# SalesID is unique
-# fiProductClassDes has _some_ disaggregations
-columns = ['fiModelDesc', 'SalesID', 'fiProductClassDesc']
-df.drop(columns, inplace=True, axis=1)
+def load_prep(oh=False):
+    """oh: One-hot encode some catvars"""
 
-# 0 means missing data for this var
-df['MachineHoursCurrentMeter'].replace(0, np.nan, inplace=True)
+    df = pd.read_pickle('trainvalid-wdates.pkl')
 
-string_columns = ['fiBaseModel', 'fiSecondaryDesc']
-map(string_clean_ip, string_columns)
+    # fiModelDesc has disaggregations
+    # SalesID is unique
+    # fiProductClassDes has _some_ disaggregations
+    #
+    columns = ['fiModelDesc', 'SalesID', 'fiProductClassDesc']
+    df.drop(columns, inplace=True, axis=1)
 
-col = 'fiBaseModel'
-df[col] = df[col].str.replace('-', '')
+    # 0 means missing data for this var
+    df['MachineHoursCurrentMeter'].replace(0, np.nan, inplace=True)
 
-col = 'fiModelSeries'
-df[col] = df[col].str.replace('-', '')
-srcs = ['SeriesII', '6.00E+00', '7.00E+00']
-targ = ['II', '6', '7']
-df[col].replace(srcs, targ, inplace=True)
-# Maybe replace II -> 2 etc
+    string_columns = ['fiBaseModel', 'fiSecondaryDesc']
+    map(string_clean_ip, string_columns)
 
-col = 'fiModelDescriptor'
-srcs = ['2.00E+00', '3.00E+00', '7.00E+00']
-targ = ['2', '3', '7']
-df[col].replace(srcs, targ, inplace=True)
+    col = 'fiBaseModel'
+    df[col] = df[col].str.replace('-', '')
 
-col = 'Enclosure'
-df[col].replace('EROPS w AC', 'EROPS AC', inplace=True)
+    col = 'fiModelSeries'
+    df[col] = df[col].str.replace('-', '')
+    srcs = ['SeriesII', '6.00E+00', '7.00E+00']
+    targ = ['II', '6', '7']
+    df[col].replace(srcs, targ, inplace=True)
+    # Maybe replace II -> 2 etc
 
-col = 'Drive_System'
-df[col].replace('All Wheel Drive', 'Four Wheel Drive', inplace=True)
+    col = 'fiModelDescriptor'
+    srcs = ['2.00E+00', '3.00E+00', '7.00E+00']
+    targ = ['2', '3', '7']
+    df[col].replace(srcs, targ, inplace=True)
 
-col = 'Blade_Width'
-df[col] = df[col].str.replace("'", '')
-df[col].replace('<12', '1', inplace=True)
+    col = 'Enclosure'
+    df[col].replace('EROPS w AC', 'EROPS AC', inplace=True)
 
-col = 'Tire_Size'
-df[col] = df[col].str.replace('"', '')
-df[col].replace('10 inch', '10', inplace=True)
+    col = 'Drive_System'
+    df[col].replace('All Wheel Drive', 'Four Wheel Drive', inplace=True)
 
-col = 'Undercarriage_Pad_Width'
-df[col] = df[col].str.replace(" inch", '')
+    col = 'Blade_Width'
+    df[col] = df[col].str.replace("'", '')
+    df[col].replace('<12', '1', inplace=True)
 
-df["Stick_Length"] = df["Stick_Length"].apply(get_inches)
+    col = 'Tire_Size'
+    df[col] = df[col].str.replace('"', '')
+    df[col].replace('10 inch', '10', inplace=True)
 
-for col in none_unspec_cats:
-    unique = no_nans(df[col].unique())
-    assert none_unspec in unique, (col, unique)
-    df[col].replace(none_unspec, none_cat, inplace=True)
+    col = 'Undercarriage_Pad_Width'
+    df[col] = df[col].str.replace(" inch", '')
 
-for col in no_none_unspec_cats:
-    unique = no_nans(df[col].unique())
-    assert none_unspec not in unique, (col, unique)
+    df["Stick_Length"] = df["Stick_Length"].apply(get_inches)
 
-for col in bin_cats:
-    unique = no_nans(df[col].unique())
-    assert len(unique) == 2
-    print(f"{col} as ordered cat with unique {unique}")
-    convert_to_ocat_ip(df, col, unique)
+    # Save some memory and training time, cut down on vars
+    # that are probably less important
+    df['saledate'] = df['saledate'].apply(lambda d: d.year)
+    for col in df.columns:
+        if df[col].dtype == np.int64:
+            df[col] = df[col].astype(np.int32)
 
-for col in unordered_multi_cats:
-    df[col] = df[col].astype('category')
+    for col in none_unspec_cats:
+        unique = no_nans(df[col].unique())
+        assert none_unspec in unique, (col, unique)
+        df[col].replace(none_unspec, none_cat, inplace=True)
 
-for col, otype in ordered_multi_cats.items():
-    none_to_nan_ip(df, col)
-    if type(otype) is list:
-        convert_to_ocat_ip(df, col, otype)
-    else:
-        convert_num_to_ocat_ip(df, col, otype)
+    for col in no_none_unspec_cats:
+        unique = no_nans(df[col].unique())
+        assert none_unspec not in unique, (col, unique)
 
-for col in df.columns:
-    unique = no_nans(df[col].unique())
-    assert none_unspec not in unique, (col, unique)
+    for col in bin_cats:
+        unique = no_nans(df[col].unique())
+        assert len(unique) == 2
+        print(f"{col} as ordered cat with unique {unique}")
+        convert_to_ocat_ip(df, col, unique)
 
-# One-hot encode cats
-df = pd.get_dummies(df, columns=unordered_multi_cats)
-# TODO Distribute NaN into cats according to their size
-# or set NaN for OH cats after conversion
+    for col in unordered_multi_cats:
+        df[col] = df[col].astype('category')
 
-dfml = pdml.ModelFrame(df)
-dfml.target_name = 'SalePrice'
-assert dfml.has_target()
-train_df, test_df = dfml.model_selection.train_test_split(test_size=0.1)
-assert train_df.has_target()
-regressor = dfml.xgboost.XGBRegressor()
-train_df.fit(regressor)
+    for col, otype in ordered_multi_cats.items():
+        none_to_nan_ip(df, col)
+        if type(otype) is list:
+            convert_to_ocat_ip(df, col, otype)
+        else:
+            convert_num_to_ocat_ip(df, col, otype)
 
-predicted = test_df.predict(regressor)
+    for col in df.columns:
+        unique = no_nans(df[col].unique())
+        assert none_unspec not in unique, (col, unique)
+
+    # One-hot encode cats
+    if oh:
+        df = pd.get_dummies(df, columns=unordered_multi_cats)
+    # TODO Distribute NaN into cats according to their size
+    # or set NaN for OH cats after conversion
+    return df
