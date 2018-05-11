@@ -136,6 +136,8 @@ def load_prep(oh=False):
     # Non-ordered categories for >2 cats
     for col in unordered_multi_cats:
         df[col] = df[col].astype('category')
+        df[col] = df[col].cat.add_categories(['NaNCat'])
+        df[col] = df[col].fillna('NaNCat')
 
     # Create (numerically or a priory) ordered cats
     for col, otype in ordered_multi_cats.items():
@@ -156,6 +158,7 @@ def load_prep(oh=False):
 
     # One-hot encode non-ordered cats
     if oh:
+        print("Constructing one-hots")
         df = pd.get_dummies(df, columns=unordered_multi_cats, prefix='oh-')
         ohcats = filter(lambda c: c.startswith('oh-'), df.columns)
         for col in ohcats:
