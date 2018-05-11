@@ -150,12 +150,16 @@ def load_prep(oh=False):
         unique = no_nans(df[col].unique())
         assert none_unspec not in unique, (col, unique)
 
+    for col in continuous_vars:
+        # 64 -> 32 bit. Could possibly set NaN to 0 and use int32
+        df[col] = df[col].astype(np.float32)
+
     # One-hot encode non-ordered cats
     if oh:
-        df = pd.get_dummies(df, columns=unordered_multi_cats, prefix='b')
-        ohcats = filter(lambda c: c.startswith('b'), df.columns)
+        df = pd.get_dummies(df, columns=unordered_multi_cats, prefix='oh-')
+        ohcats = filter(lambda c: c.startswith('oh-'), df.columns)
         for col in ohcats:
-            # uint8 -> bool for one hots
+            # uint8 -> bool
             df[col] = df[col].astype(np.bool)
 
     # TODO Distribute NaN into cats according to their size

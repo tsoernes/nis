@@ -55,6 +55,7 @@ unordered_multi_cats = set(none_unspec_cats).union(
 # more than 2 elements (not counting none_unspec or NaN)
 # none_unspec and NaN treated as missing
 ordered_multi_cats = {
+    'saledate': int,
     'YearMade': int,
     'UsageBand': ['Low', 'High', 'Medium'],
     # If we assume that Mini vs Compact vs Small is not used for the same type of
@@ -69,7 +70,7 @@ ordered_multi_cats = {
     'Grouser_Type': ['Single', 'Double', 'Triple']
 }
 
-continuous_vars = ['saledate', 'MachineHoursCurrentMeter']
+continuous_vars = ['MachineHoursCurrentMeter']
 
 # None of the above groups should intersect
 # svars = [

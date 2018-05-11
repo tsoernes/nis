@@ -72,14 +72,14 @@ def get_inches(el):
 
 
 def convert_num_to_ocat_ip(df, col, typ):
-    """ E.g. ['12', '14', '13', '16'] -> [1, 3, 2, 4]"""
+    """Ordered category for numeric types"""
     uniq = no_nans(df[col].unique())
-    uniq_num = map(typ, uniq)
-    sorted(uniq_num)
-    srcs = sorted(uniq_num)
-    targ = range(1, len(srcs) + 1)
-    df[col].replace(srcs, targ, inplace=True)
-    df[col] = df[col].astype('category')
+    order = sorted(map(typ, uniq))
+    # srcs = sorted(uniq_num)
+    # targ = range(1, len(srcs) + 1)
+    # df[col].replace(srcs, targ, inplace=True)
+    # df[col] = df[col].astype('category')
+    convert_to_ocat_ip(df, col, order)
 
 
 def convert_to_ocat_ip(df, col, order):
