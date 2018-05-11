@@ -67,7 +67,7 @@ def isnan(e):
 
 
 def no_nans(iterable):
-    return filter(lambda e: not isnan(e), iterable)
+    return list(filter(lambda e: not isnan(e), iterable))
 
 
 def none_to_nan_ip(df, col):
@@ -96,7 +96,8 @@ def convert_num_to_ocat_ip(df, col, typ):
     targ = range(1, len(srcs) + 1)
     df[col].replace(srcs, targ, inplace=True)
     # How to handle missing data?
-    df[col] = df[col].astype(int)
+    df[col] = df[col].astype('category')
+    # df[col] = df[col].astype(int)
 
 
 # If this is converted back to int, are the ints in correct order?

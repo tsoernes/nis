@@ -5,7 +5,7 @@ unordered_cats = [
     'auctioneerID',
     'fiBaseModel',
     'fiSecondaryDesc',
-    'fiModelSeries'
+    'fiModelSeries',
     'fiModelDescriptor',
     'state',
     'ProductGroup',
@@ -40,8 +40,25 @@ unordered_cats = [
     'Steering_Controls',
 ]
 
-# (Discrete) Categories with a natural order and more than 2 elements
-ordered_cats = {
+# (A, Bn) Treat none_unspec as own cat instead of missing data. NaN is treated as missing.
+# If the var has two cats excluding none_unspec, create a ordered cat with
+# none_unspec in the middle
+none_as_ocat = [
+    'Backhoe_Mounting', 'Blade_Extension', 'Coupler', 'Coupler_System', 'Enclosure_Type',
+    'Forks', 'Grouser_Tracks', 'Hydraulics_Flow', 'Pattern_Changer', 'Pushblock',
+    'Ride_Control', 'Scarifier', 'Thumb', 'Tip_Control', 'Turbocharged'
+]
+
+# (Bu) Cats without non_unspec
+nan_as_cat = [
+    'Engine_Horsepower',
+    'Stick',
+    'Track_Type',
+]
+
+# (C) Categories with a natural order and more than 2 elements (not counting none_unspec)
+# none_unspec and NaN treaded as missing
+ordered_multi_cats = {
     'YearMade': int,
     'UsageBand': ['Low', 'High', 'Medium'],
     # If we assume that Mini vs Compact vs Small is not used for the same type of
@@ -56,13 +73,5 @@ ordered_cats = {
     'Grouser_Type': ['Single', 'Double', 'Triple']
 }
 
+# (E)
 continuous_vars = ['saledate', 'MachineHoursCurrentMeter']
-
-# Has entries for 'Yes' but none for 'No'.
-# Assume that 'None or Unspecified' means 'No' instead.
-# Can also try the assumption that missing data means no instead.
-assume_no = [
-    'Coupler', 'Coupler_System', 'Grouser_Tracks', 'Hydraulics_Flow', 'Thumb',
-    'Backhoe_Mounting', 'Turbocharged', 'Blade_Extension', 'Pushblock', 'Scarifier',
-    'Forks'
-]
