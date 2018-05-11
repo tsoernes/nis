@@ -107,13 +107,16 @@ def load_prep(oh=False):
 
     df["Stick_Length"] = df["Stick_Length"].apply(get_inches)
 
-    # Save some memory and training time, cut down on vars
-    # that are probably less important
+    # Just store year of sale in order to
+    # save some memory and training time
     df['saledate'] = df['saledate'].apply(lambda d: d.year)
     for col in df.columns:
         if df[col].dtype == np.int64:
             df[col] = df[col].astype(np.int32)
+    # Got to fit in memory ..
+    # df = df.drop(df.index[:100000])
 
+    # Make none_unspec cat
     for col in none_unspec_cats:
         unique = no_nans(df[col].unique())
         assert none_unspec in unique, (col, unique)
@@ -123,15 +126,18 @@ def load_prep(oh=False):
         unique = no_nans(df[col].unique())
         assert none_unspec not in unique, (col, unique)
 
+    # Create ordered category for binary vars
     for col in bin_cats:
         unique = no_nans(df[col].unique())
         assert len(unique) == 2
         print(f"{col} as ordered cat with unique {unique}")
         convert_to_ocat_ip(df, col, unique)
 
+    # Non-ordered categories for >2 cats
     for col in unordered_multi_cats:
         df[col] = df[col].astype('category')
 
+    # Create (numerically or a priory) ordered cats
     for col, otype in ordered_multi_cats.items():
         none_to_nan_ip(df, col)
         if type(otype) is list:
@@ -139,13 +145,19 @@ def load_prep(oh=False):
         else:
             convert_num_to_ocat_ip(df, col, otype)
 
+    # There should not be any none_unspec left in data set at this point
     for col in df.columns:
         unique = no_nans(df[col].unique())
         assert none_unspec not in unique, (col, unique)
 
-    # One-hot encode cats
+    # One-hot encode non-ordered cats
     if oh:
-        df = pd.get_dummies(df, columns=unordered_multi_cats)
+        df = pd.get_dummies(df, columns=unordered_multi_cats, prefix='b')
+        ohcats = filter(lambda c: c.startswith('b'), df.columns)
+        for col in ohcats:
+            # uint8 -> bool for one hots
+            df[col] = df[col].astype(np.bool)
+
     # TODO Distribute NaN into cats according to their size
-    # or set NaN for OH cats after conversion
+    # alternatively, set NaN for OH cats after conversion
     return df
