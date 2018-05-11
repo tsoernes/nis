@@ -45,9 +45,10 @@ def string_clean_ip(df, col):
 
 
 def isnan(e):
-    if type(e) is float:
+    try:
         return np.isnan(e)
-    return False
+    except TypeError:
+        return False
 
 
 def no_nans(iterable):
