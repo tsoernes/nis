@@ -1,12 +1,16 @@
+import pdb
+from itertools import chain
+
 import numpy as np
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 
 from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches,
-                        no_nans, none_to_nan_ip, none_unspec, not_applicable,
-                        string_clean_ip)
-from vartypes import (continuous_vars, nan_as_cat, none_as_ocat,
-                      ordered_multi_cats, unordered_cats)
+                        no_nans, none_cat, none_to_nan_ip, none_unspec,
+                        not_applicable, string_clean_ip)
+from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
+                      none_unspec_cats, ordered_multi_cats,
+                      unordered_multi_cats)
 
 # TODO
 # Figure out how to encode data for xboost (0 vs NaN)
@@ -28,27 +32,18 @@ from vartypes import (continuous_vars, nan_as_cat, none_as_ocat,
 # - Order cats (X, N)
 # - XGB decides what to do with NaN
 #
-# (Bn) For vars with 2 cats (X, Y),
-# where the possibility of a unknown third cat seems likely
+# (B) For vars with 2 cats (X < Y) and no none_unspec:
+# - Order cats (X, Y)
+# - XGB decides what to do with NaN
+#
+# (C) For vars with 2 cats and none_unspec or >2 cats:
 # - Create cat N for none_unspec
-# - Ordered cats (X, N, Y)
-# - XGB decides what to do with NaN
+# - One-Hot encode cats
+# - Propagate NaNs to OH cats
 #
-# (Bu) For vars with 2 cats (X, Y),
-# where the possibility of a unknown third cat seems very unlikely
-# - Convert none_unspec -> NaN
-# - Ordered cats (X, Y)
-# - XGB decides what to do with NaN
-#
-# (C) For vars with >2 ordered cats:
+# (D) For vars with >2 ordered cats:
 # - Convert none_unspec -> NaN
 # - XGB decides what to do with NaN
-#
-# (D) For remaining unordered cat vars:
-# - Create cat for none_unspec
-# - Distribute NaN into cats according to their size
-# - One-hot encode cats
-# - Do the same at test time
 #
 # (E) For continuous vars:
 # - Convert none_unspec -> NaN
@@ -110,29 +105,24 @@ df[col] = df[col].str.replace(" inch", '')
 
 df["Stick_Length"] = df["Stick_Length"].apply(get_inches)
 
-# (Bu) to cat
-for col in nan_as_cat:
-    # Convert none_unspec -> NaN
-    none_to_nan_ip(df, col)
+for col in none_unspec_cats:
+    unique = no_nans(df[col].unique())
+    assert none_unspec in unique, (col, unique)
+    df[col].replace(none_unspec, none_cat, inplace=True)
+
+for col in no_none_unspec_cats:
+    unique = no_nans(df[col].unique())
+    assert none_unspec not in unique, (col, unique)
+
+for col in bin_cats:
+    unique = no_nans(df[col].unique())
+    assert len(unique) == 2
+    print(f"{col} as ordered cat with unique {unique}")
+    convert_to_ocat_ip(df, col, unique)
+
+for col in unordered_multi_cats:
     df[col] = df[col].astype('category')
 
-# (Bo)
-for col in none_as_ocat:
-    # Create cat N for none_unspec
-    # Ordered cats
-    unique = no_nans(df[col].unique())
-    unique_nn = list(filter(lambda x: x != none_unspec, unique))
-    if len(unique_nn) == 1:
-        order = [unique_nn[0], none_unspec]
-    elif len(unique_nn) == 2:
-        order = [unique_nn[0], none_unspec, unique_nn[1]]
-    else:
-        raise Exception((col, unique))
-    print(order)
-    cat_type = CategoricalDtype(categories=order, ordered=True)
-    df[col] = df[col].astype(cat_type)
-
-# (C)
 for col, otype in ordered_multi_cats.items():
     none_to_nan_ip(df, col)
     if type(otype) is list:
@@ -140,9 +130,11 @@ for col, otype in ordered_multi_cats.items():
     else:
         convert_num_to_ocat_ip(df, col, otype)
 
-# (D)
-# TODO Distribute NaN into cats according to their size
+for col in df.columns:
+    unique = no_nans(df[col].unique())
+    assert none_unspec not in unique, (col, unique)
+
 # One-hot encode cats
-for col in unordered_cats:
-    df[col].replace(none_unspec, np.nan, inplace=True)
-# unordered_cats_oh = pd.get_dummies(df, unordered_cats)
+# unordered_cats_oh = pd.get_dummies(df, unordered_multi_cats)
+# TODO Distribute NaN into cats according to their size
+# or set NaN for OH cats after conversion

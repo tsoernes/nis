@@ -1,62 +1,58 @@
-# The following looks like its okay of assuming 'None or Unspecified' means
-# either data missing or not applicable
-unordered_cats = [
-    'datasource',
-    'auctioneerID',
-    'fiBaseModel',
+# Create cat for none_unspec
+none_unspec_cats = [
+    'Backhoe_Mounting',
+    'Blade_Extension',
+    'Blade_Type',
+    'Coupler',
+    'Coupler_System',
+    'Enclosure',
+    'Enclosure_Type',
+    'Forks',
+    'Grouser_Tracks',
+    'Hydraulics',
+    'Pad_Type',
+    'Pattern_Changer',
+    'Pushblock',
+    'Ride_Control',
+    'Ripper',
+    'Scarifier',
+    'Thumb',
+    'Tip_Control',
+    'Transmission',
+    'Travel_Controls',
+    'Turbocharged',
+]
+
+# Cats without none_unspec
+no_none_unspec_cats = [
     'fiSecondaryDesc',
     'fiModelSeries',
     'fiModelDescriptor',
-    'state',
-    'ProductGroup',
-    'ProductGroupDesc',
-    'Drive_System',
-    'Enclosure',
-    'Forks',
-    'Pad_Type',
-    'Ride_Control',
-    'Stick',
-    'Transmission',
-    'Turbocharged',
-    'Blade_Extension',
-    'Enclosure_Type',
-    'Engine_Horsepower',
-    'Hydraulics',
-    'Pushblock',
-    'Ripper',
-    'Scarifier',
-    'Tip_Control',
-    'Coupler',
-    'Coupler_System',
-    'Grouser_Tracks',
-    'Track_Type',
-    'Thumb',
-    'Pattern_Changer',
-    'Grouser_Type',
-    'Backhoe_Mounting',
-    'Blade_Type',
-    'Travel_Controls',
+    'fiBaseModel',
+    'datasource',
+    'auctioneerID',
     'Differential_Type',
     'Steering_Controls',
-]
-
-# (A, Bn) Treat none_unspec as own cat instead of missing data. NaN is treated as missing.
-# If the var has two cats excluding none_unspec, create a ordered cat with
-# none_unspec in the middle
-none_as_ocat = [
-    'Backhoe_Mounting', 'Blade_Extension', 'Coupler', 'Coupler_System', 'Enclosure_Type',
-    'Forks', 'Grouser_Tracks', 'Hydraulics_Flow', 'Pattern_Changer', 'Pushblock',
-    'Ride_Control', 'Scarifier', 'Thumb', 'Tip_Control', 'Turbocharged'
-]
-
-# (Bu) Cats without non_unspec
-nan_as_cat = [
+    'ProductGroupDesc',
+    'ProductGroup',
+    'Drive_System',
     'Engine_Horsepower',
+    'state',
     'Stick',
     'Track_Type',
 ]
 
-# (C) Categories with a natural order and more than 2 elements (not counting none_unspec)
+# Cats which are binary COUNTING potential none_unspec
+bin_cats = [
+    'Backhoe_Mounting', 'Blade_Extension', 'Coupler_System', 'Forks', 'Grouser_Tracks',
+    'Pushblock', 'Scarifier', 'Turbocharged', 'Engine_Horsepower', 'Stick', 'Track_Type'
+]
+
+unordered_multi_cats = set(none_unspec_cats).union(
+    set(no_none_unspec_cats)) - set(bin_cats)
+
+# Categories with a natural order and
+# more than 2 elements (not counting none_unspec or NaN)
 # none_unspec and NaN treaded as missing
 ordered_multi_cats = {
     'YearMade': int,
@@ -73,5 +69,15 @@ ordered_multi_cats = {
     'Grouser_Type': ['Single', 'Double', 'Triple']
 }
 
-# (E)
 continuous_vars = ['saledate', 'MachineHoursCurrentMeter']
+
+# None of the above groups should intersect
+# svars = [
+#     set(unordered_multi_cats),
+#     set(no_none_unspec_cats),
+#     set(ordered_multi_cats.keys()),
+# ]
+# for i, svar1 in enumerate(svars):
+#     for j, svar2 in enumerate(svars[i + 1:]):
+#         intsec = svar1.intersection(svar2)
+#         assert len(intsec) == 0, (intsec, i, j)

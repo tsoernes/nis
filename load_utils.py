@@ -7,6 +7,7 @@ from pandas.api.types import CategoricalDtype
 
 not_applicable = 'Unspecified'
 none_unspec = 'None or Unspecified'
+none_cat = 'NoneCat'
 
 
 def cun(df, x, ac=False, vc=False):
@@ -20,15 +21,10 @@ def cun(df, x, ac=False, vc=False):
         print(df[x][:10])
         data = df[x]
     if vc:
-        print(data.value_counts())
+        print(data.value_counts(dropna=False))
     y = data.unique()
     last = None if ac else 10
     print(y[:last], y.shape)
-
-
-def con(df, x):
-    """ Helper function for browsing data set """
-    print(f"{x}:\n{value_counts(df, x)} \n")
 
 
 def datadict_to_pandas(df):
@@ -46,18 +42,6 @@ def datadict_to_pandas(df):
 
 def string_clean_ip(df, col):
     df[col] = df[col].str.strip().str.lower()
-
-
-def value_counts(df, x):
-    """ Value counts with NaN """
-    if type(x) is int:
-        data = df.iloc[:, x]
-    else:
-        data = df[x]
-    vc = data.value_counts()
-    nnans = data.size - sum(vc)
-    vc = vc.append(pd.Series([nnans], ['NaN']))
-    return vc
 
 
 def isnan(e):
@@ -95,14 +79,10 @@ def convert_num_to_ocat_ip(df, col, typ):
     srcs = sorted(uniq_num)
     targ = range(1, len(srcs) + 1)
     df[col].replace(srcs, targ, inplace=True)
-    # How to handle missing data?
     df[col] = df[col].astype('category')
-    # df[col] = df[col].astype(int)
 
 
-# If this is converted back to int, are the ints in correct order?
 def convert_to_ocat_ip(df, col, order):
     """Ordered category"""
     cat_type = CategoricalDtype(categories=order, ordered=True)
     df[col] = df[col].astype(cat_type)
-    # df[col] = df[col].astype('category')
