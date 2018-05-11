@@ -1,9 +1,10 @@
-import pdb
 from itertools import chain
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import CategoricalDtype
+import pandas_ml as pdml
+import sklearn as skl
+import xgboost as xgb
 
 from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches,
                         no_nans, none_cat, none_to_nan_ip, none_unspec,
@@ -18,7 +19,7 @@ from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
 # Parse fiProductClassDesc
 # Reintroduce datetime
 #
-## Handling features with missing values.
+# Handling features with missing values.
 # Notation:
 # XGB - XGBoost
 # cat - category
@@ -135,6 +136,16 @@ for col in df.columns:
     assert none_unspec not in unique, (col, unique)
 
 # One-hot encode cats
-# unordered_cats_oh = pd.get_dummies(df, unordered_multi_cats)
+df = pd.get_dummies(df, columns=unordered_multi_cats)
 # TODO Distribute NaN into cats according to their size
 # or set NaN for OH cats after conversion
+
+dfml = pdml.ModelFrame(df)
+dfml.target_name = 'SalePrice'
+assert dfml.has_target()
+train_df, test_df = dfml.model_selection.train_test_split(test_size=0.1)
+assert train_df.has_target()
+regressor = dfml.xgboost.XGBRegressor()
+train_df.fit(regressor)
+
+predicted = test_df.predict(regressor)

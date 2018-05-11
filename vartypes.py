@@ -53,7 +53,7 @@ unordered_multi_cats = set(none_unspec_cats).union(
 
 # Categories with a natural order and
 # more than 2 elements (not counting none_unspec or NaN)
-# none_unspec and NaN treaded as missing
+# none_unspec and NaN treated as missing
 ordered_multi_cats = {
     'YearMade': int,
     'UsageBand': ['Low', 'High', 'Medium'],
