@@ -4,6 +4,8 @@ import numpy as np
 import openpyxl as op
 import pandas as pd
 from pandas.api.types import CategoricalDtype
+from pandas.core.categorical import Categorical
+from scipy.sparse import csr_matrix
 
 not_applicable = 'Unspecified'
 none_unspec = 'None or Unspecified'
@@ -93,3 +95,18 @@ def convert_to_ocat_ip(df, col, order):
     """Ordered category. """
     cat_type = CategoricalDtype(categories=order, ordered=True)
     df[col] = df[col].astype(cat_type)
+
+
+def sparse_dummies(categorical_values):
+    categories = Categorical.from_array(categorical_values)
+    N = len(categorical_values)
+    row_numbers = np.arange(N, dtype=np.int)
+    ones = np.ones((N, ))
+    return csr_matrix((ones, (row_numbers, categories.codes)))
+
+
+def sparse_dummies_from_codes(codes):
+    N = len(codes)
+    row_numbers = np.arange(N, dtype=np.int)
+    ones = np.ones((N, ))
+    return csr_matrix((ones, (row_numbers, codes.values)))

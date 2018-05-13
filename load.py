@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
+from scipy.sparse import hstack
 
 from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches,
                         nan_cat, no_nans, none_cat, none_to_nan_ip,
-                        none_unspec, not_applicable, string_clean_ip)
+                        none_unspec, not_applicable, sparse_dummies,
+                        string_clean_ip)
 from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
                       none_unspec_cats, ordered_multi_cats,
                       unordered_multi_cats)
@@ -205,40 +207,46 @@ def load_prep(oh=False):
         if len(unique) != len(nn_unique):
             df[col] = df[col].fillna(nan_cat)
 
-    for col in df.columns:
-        # There should not be any none_unspec left in data set at this point
-        unique = df[col].unique()
-        nn_unique = no_nans(unique)
-        assert none_unspec not in nn_unique, (col, nn_unique)
-        if df[col].dtype.name == "category":
-            has_nan_cat = nan_cat in df[col].cat.categories
-            # Use pd-internal int8 cat coding
-            df[col] = df[col].values.codes
-            # We only want NaN-cats to have code 0,
-            # which is interpreted as missing by XGB
-            codes = unique.codes
-            for i, cat in enumerate(unique):
-                # assert not ((codes[i] == 0) ^ (cat == nan_cat)), (col, unique, codes)
-                if (codes[i] == 0) and (cat != nan_cat) and col != 'YearMade':
-                    df[col] = df[col] + 1
+    # for col in df.columns:
+    #     # There should not be any none_unspec left in data set at this point
+    #     unique = df[col].unique()
+    #     nn_unique = no_nans(unique)
+    #     assert none_unspec not in nn_unique, (col, nn_unique)
+    #     if df[col].dtype.name == "category":
+    #         has_nan_cat = nan_cat in df[col].cat.categories
+    #         # Use pd-internal int8 cat coding
+    #         df[col] = df[col].values.codes
+    #         # We only want NaN-cats to have code 0,
+    #         # which is interpreted as missing by XGB
+    #         codes = unique.codes
+    #         for i, cat in enumerate(unique):
+    #             # assert not ((codes[i] == 0) ^ (cat == nan_cat)), (col, unique, codes)
+    #             if (codes[i] == 0) and (cat != nan_cat) and col != 'YearMade':
+    #                 # df[col] = df[col] + 1
 
-            has_nan = not len(unique) == len(nn_unique)
-            codes = df[col].unique()
-            has_nan_code = 0 in codes
-            print(
-                f"\n{col} NanVals:{has_nan}, NanCat:{has_nan_cat}, NanCode:{has_nan_code}"
-                f"\nCats:{unique}\nCodes:{codes}")
+    #         has_nan = not len(unique) == len(nn_unique)
+    #         codes = df[col].unique()
+    #         has_nan_code = 0 in codes
+    #         print(
+    #             f"\n{col} NanVals:{has_nan}, NanCat:{has_nan_cat}, NanCode:{has_nan_code}"
+    #             f"\nCats:{unique}\nCodes:{codes}")
 
     # One-hot encode non-ordered cats
     if oh:
         print("Constructing one-hots")
-        df = pd.get_dummies(df, columns=unordered_multi_cats, prefix='oh-')
-        ohcats = filter(lambda c: c.startswith('oh-'), df.columns)
-        for col in ohcats:
-            # uint8 -> bool
-            df[col] = df[col].astype(np.bool)
+        targets = df.pop('SalePrice')
+        # hstack(sparse_dummies_from_codes(df[col]) for col in df.columns), format="csr")
+        for col in unordered_multi_cats:
+            df = pd.get_dummies(df, columns=[col], prefix='oh-' + col + '-', sparse=True)
+            # df[col] = df[col].astype(np.bool)
+        return (targets, df)
 
     return df
+
+
+def save_oh():
+    df = load_prep(oh=True)
+    df.to_pickle("trainvalid-oh.pkl")
 
 
 if __name__ == "__main__":
