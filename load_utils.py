@@ -8,6 +8,7 @@ from pandas.api.types import CategoricalDtype
 not_applicable = 'Unspecified'
 none_unspec = 'None or Unspecified'
 none_cat = 'NoneCat'
+nan_cat = 'NaNCat'
 
 
 def cun(df, x, ac=False, vc=False):
@@ -63,7 +64,7 @@ inch_re = re.compile(r"([0-9]+)\' ([0-9]*)\"")
 
 
 def get_inches(el):
-    if (type(el) is not str and np.isnan(el)) or el == 'None or Unspecified':
+    if (type(el) is not str and np.isnan(el)) or el == none_unspec:
         return el
     m = inch_re.match(el)
     if m is None:
@@ -73,17 +74,22 @@ def get_inches(el):
 
 
 def convert_num_to_ocat_ip(df, col, typ):
-    """Ordered category for numeric types"""
-    uniq = no_nans(df[col].unique())
-    order = sorted(map(typ, uniq))
-    # srcs = sorted(uniq_num)
-    # targ = range(1, len(srcs) + 1)
-    # df[col].replace(srcs, targ, inplace=True)
-    # df[col] = df[col].astype('category')
+    """Ordered category for numeric types.
+    NaNs have lowest order and should be
+    interpreted as missing"""
+    unique = df[col].unique()
+    nn_unique = no_nans(unique)
+    # Sort in natural order by type, e.g. int("1")
+    order = sorted(nn_unique, key=typ)
+    if len(unique) != len(nn_unique):
+        df[col] = df[col].fillna(nan_cat)
+        df[col] = df[col].astype('category')
+        order = (nan_cat, *order)
+        # print(df[col].cat.categories, df[col].unique(), order)
     convert_to_ocat_ip(df, col, order)
 
 
 def convert_to_ocat_ip(df, col, order):
-    """Ordered category"""
+    """Ordered category. """
     cat_type = CategoricalDtype(categories=order, ordered=True)
     df[col] = df[col].astype(cat_type)

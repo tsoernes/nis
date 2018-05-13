@@ -1,26 +1,9 @@
 # Create cat for none_unspec
 none_unspec_cats = [
-    'Backhoe_Mounting',
-    'Blade_Extension',
-    'Blade_Type',
-    'Coupler',
-    'Coupler_System',
-    'Enclosure',
-    'Enclosure_Type',
-    'Forks',
-    'Grouser_Tracks',
-    'Hydraulics',
-    'Pad_Type',
-    'Pattern_Changer',
-    'Pushblock',
-    'Ride_Control',
-    'Ripper',
-    'Scarifier',
-    'Thumb',
-    'Tip_Control',
-    'Transmission',
-    'Travel_Controls',
-    'Turbocharged',
+    'Backhoe_Mounting', 'Blade_Extension', 'Blade_Type', 'Coupler', 'Coupler_System',
+    'Enclosure', 'Enclosure_Type', 'Forks', 'Grouser_Tracks', 'Hydraulics', 'Pad_Type',
+    'Pattern_Changer', 'Pushblock', 'Ride_Control', 'Ripper', 'Scarifier', 'Thumb',
+    'Tip_Control', 'Transmission', 'Travel_Controls', 'Turbocharged', 'Hydraulics_Flow'
 ]
 
 # Cats without none_unspec
@@ -63,22 +46,9 @@ ordered_multi_cats = {
     'ProductSize': ['Mini', 'Compact', 'Small', 'Medium', 'Large / Medium', 'Large'],
     'Blade_Width': int,
     'Tire_Size': float,
-    'Hydraulics_Flow': ['No', 'Standard'
-                        'High Flow'],
     'Undercarriage_Pad_Width': float,
     'Stick_Length': float,
     'Grouser_Type': ['Single', 'Double', 'Triple']
 }
 
 continuous_vars = ['MachineHoursCurrentMeter']
-
-# None of the above groups should intersect
-# svars = [
-#     set(unordered_multi_cats),
-#     set(no_none_unspec_cats),
-#     set(ordered_multi_cats.keys()),
-# ]
-# for i, svar1 in enumerate(svars):
-#     for j, svar2 in enumerate(svars[i + 1:]):
-#         intsec = svar1.intersection(svar2)
-#         assert len(intsec) == 0, (intsec, i, j)

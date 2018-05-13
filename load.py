@@ -1,17 +1,14 @@
-from itertools import chain
-
 import numpy as np
 import pandas as pd
 
 from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches,
-                        no_nans, none_cat, none_to_nan_ip, none_unspec,
-                        not_applicable, string_clean_ip)
+                        nan_cat, no_nans, none_cat, none_to_nan_ip,
+                        none_unspec, not_applicable, string_clean_ip)
 from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
                       none_unspec_cats, ordered_multi_cats,
                       unordered_multi_cats)
 
 # TODO
-# Figure out how to encode data for xboost (0 vs NaN)
 # Figure out metric
 # Parse fiProductClassDesc
 # Reintroduce datetime
@@ -44,9 +41,8 @@ from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
 # - XGB decides what to do with NaN
 #
 # (E) For continuous vars:
-# - Convert none_unspec -> NaN
-# - Convert 0 -> NaN
-# - XGB decides what to do with NaN
+# - Convert none_unspec, NaN -> 0
+# - XGB decides what to do with 0
 #
 #
 # XGB decides at training time whether missing values go into the right or left node.
@@ -66,9 +62,6 @@ def load_prep(oh=False):
     #
     columns = ['fiModelDesc', 'SalesID', 'fiProductClassDesc']
     df.drop(columns, inplace=True, axis=1)
-
-    # 0 means missing data for this var
-    df['MachineHoursCurrentMeter'].replace(0, np.nan, inplace=True)
 
     string_columns = ['fiBaseModel', 'fiSecondaryDesc']
     map(string_clean_ip, string_columns)
@@ -107,6 +100,11 @@ def load_prep(oh=False):
 
     df["Stick_Length"] = df["Stick_Length"].apply(get_inches)
 
+    col = 'MachineHoursCurrentMeter'
+    # float64 -> int32
+    df[col] = df[col].fillna(0)
+    df[col] = df[col].astype(np.int32)
+
     # Just store year of sale in order to
     # save some memory and training time
     df['saledate'] = df['saledate'].apply(lambda d: d.year)
@@ -128,33 +126,58 @@ def load_prep(oh=False):
 
     # Create ordered category for binary vars
     for col in bin_cats:
-        unique = no_nans(df[col].unique())
-        assert len(unique) == 2
-        print(f"{col} as ordered cat with unique {unique}")
-        convert_to_ocat_ip(df, col, unique)
+        unique = df[col].unique()
+        nn_unique = no_nans(unique)
+        assert len(nn_unique) == 2
+        if len(unique) == len(nn_unique):
+            order = unique
+        else:
+            # Put NaN as middle ordered cat. See:
+            # http://fastml.com/converting-categorical-data-into-numbers-with-pandas-and-scikit-learn/
+            order = (nn_unique[0], nan_cat, nn_unique[1])
+        print(f"{col} as ordered cat with order {order}")
+        convert_to_ocat_ip(df, col, order)
+        df[col] = df[col].fillna(nan_cat)
 
     # Non-ordered categories for >2 cats
     for col in unordered_multi_cats:
         df[col] = df[col].astype('category')
-        df[col] = df[col].cat.add_categories(['NaNCat'])
-        df[col] = df[col].fillna('NaNCat')
 
     # Create (numerically or a priory) ordered cats
     for col, otype in ordered_multi_cats.items():
         none_to_nan_ip(df, col)
         if type(otype) is list:
-            convert_to_ocat_ip(df, col, otype)
+            convert_to_ocat_ip(df, col, (nan_cat, *otype))
         else:
             convert_num_to_ocat_ip(df, col, otype)
+        unique = df[col].unique()
+        nn_unique = no_nans(unique)
+        if len(unique) != len(nn_unique):
+            df[col] = df[col].fillna(nan_cat)
 
-    # There should not be any none_unspec left in data set at this point
     for col in df.columns:
-        unique = no_nans(df[col].unique())
-        assert none_unspec not in unique, (col, unique)
+        # There should not be any none_unspec left in data set at this point
+        unique = df[col].unique()
+        nn_unique = no_nans(unique)
+        assert none_unspec not in nn_unique, (col, nn_unique)
+        if df[col].dtype.name == "category":
+            has_nan_cat = nan_cat in df[col].cat.categories
+            # Use pd-internal int8 cat coding
+            df[col] = df[col].values.codes
+            # We only want NaN-cats to have code 0,
+            # which is interpreted as missing by XGB
+            codes = unique.codes
+            for i, cat in enumerate(unique):
+                # assert not ((codes[i] == 0) ^ (cat == nan_cat)), (col, unique, codes)
+                if (codes[i] == 0) and (cat != nan_cat):
+                    df[col] = df[col] + 1
 
-    for col in continuous_vars:
-        # 64 -> 32 bit. Could possibly set NaN to 0 and use int32
-        df[col] = df[col].astype(np.float32)
+            has_nan = not len(unique) == len(nn_unique)
+            codes = df[col].unique()
+            has_nan_code = 0 in codes
+            print(
+                f"\n{col} NanVals:{has_nan}, NanCat:{has_nan_cat}, NanCode:{has_nan_code}"
+                f"\nCats:{unique}\nCodes:{codes}")
 
     # One-hot encode non-ordered cats
     if oh:
@@ -165,6 +188,8 @@ def load_prep(oh=False):
             # uint8 -> bool
             df[col] = df[col].astype(np.bool)
 
-    # TODO Distribute NaN into cats according to their size
-    # alternatively, set NaN for OH cats after conversion
     return df
+
+
+if __name__ == "__main__":
+    load_prep(oh=False)
