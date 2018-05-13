@@ -80,6 +80,7 @@ def convert_num_to_ocat_ip(df, col, typ):
     # targ = range(1, len(srcs) + 1)
     # df[col].replace(srcs, targ, inplace=True)
     # df[col] = df[col].astype('category')
+    print(order)
     convert_to_ocat_ip(df, col, order)
 
 
