@@ -234,13 +234,12 @@ def load_prep(oh=False):
     # One-hot encode non-ordered cats
     if oh:
         print("Constructing one-hots")
-        targets = df.pop('SalePrice')
         # hstack(sparse_dummies_from_codes(df[col]) for col in df.columns), format="csr")
         prefixes = list(map(lambda s: "oh-" + s, unordered_multi_cats))
         df = pd.get_dummies(df, columns=unordered_multi_cats, prefix=prefixes)
         # df[col] = df[col].astype(np.bool)
         df = df.to_sparse(fill_value=0)
-        return (targets, df)
+        return df
 
     return df
 
