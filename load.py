@@ -49,6 +49,53 @@ from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
 # It chooses which to minimise loss.
 # Note that the gblinear booster treats missing values as zeros.
 #
+# Example statistics:
+# Maximum machine hours
+# In [1889]: df['MachineHoursCurrentMeter'].max()
+# Out[1889]: 2483300.0
+#
+# Mean machine hours
+# In [1910]: df['MachineHoursCurrentMeter'][df['MachineHoursCurrentMeter'] > 0].mean()
+# Out[1910]: 7053.819247997828
+#
+# In [1946]: df['Stick_Length'].value_counts(dropna=False)
+# Out[1949]:
+# NaN                    310437
+# None or Unspecified     81539
+# 9' 6"                    5832
+# 10' 6"                   3519
+# 11' 0"                   1601
+# 9' 10"                   1463
+# 9' 8"                    1462
+# 9' 7"                    1423
+# 12' 10"                  1087
+# 10' 2"                   1004
+# 8' 6"                     908
+# 8' 2"                     614
+# 10' 10"                   414
+# 12' 8"                    322
+# 11' 10"                   307
+# 8' 4"                     274
+# 8' 10"                    104
+# 12' 4"                    103
+# 9' 5"                     101
+# 15' 9"                     87
+# 6' 3"                      51
+# 13' 7"                     11
+# 13' 9"                      7
+# 14' 1"                      7
+# 13' 10"                     7
+# 19' 8"                      5
+# 7' 10"                      3
+# 15' 4"                      3
+# 24' 3"                      2
+# 9' 2"                       1
+# Name: Stick_Length, dtype: int64
+#
+#
+#
+#
+#
 
 
 def load_prep(oh=False):
@@ -83,6 +130,9 @@ def load_prep(oh=False):
 
     col = 'Enclosure'
     df[col].replace('EROPS w AC', 'EROPS AC', inplace=True)
+
+    col = 'YearMade'
+    df[col].replace(1000, 0, inplace=True)
 
     col = 'Drive_System'
     df[col].replace('All Wheel Drive', 'Four Wheel Drive', inplace=True)
@@ -169,7 +219,7 @@ def load_prep(oh=False):
             codes = unique.codes
             for i, cat in enumerate(unique):
                 # assert not ((codes[i] == 0) ^ (cat == nan_cat)), (col, unique, codes)
-                if (codes[i] == 0) and (cat != nan_cat):
+                if (codes[i] == 0) and (cat != nan_cat) and col != 'YearMade':
                     df[col] = df[col] + 1
 
             has_nan = not len(unique) == len(nn_unique)
