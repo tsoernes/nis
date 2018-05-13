@@ -249,5 +249,5 @@ def save_oh():
     df.to_pickle("trainvalid-oh.pkl")
 
 
-if __name__ == "__main__":
-    load_prep(oh=False)
+# if __name__ == "__main__":
+#     load_prep(oh=False)
