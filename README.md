@@ -1,8 +1,12 @@
-TODO
-Figure out metric
-Parse fiProductClassDesc
-Reintroduce datetime
-Maximum machine hours
+```
+p3 run.py
+Loss/log-loss:
+R2:0.9121/0.9090
+MSE:47928668.7609/0.0441
+RMSE:6923.0534/0.2100
+```
+
+Some statistics:
 ```
 In [1889]: df['MachineHoursCurrentMeter'].max()
 Out[1889]: 2483300.0
@@ -12,8 +16,8 @@ Mean machine hours
 In [1910]: df['MachineHoursCurrentMeter'][df['MachineHoursCurrentMeter'] > 0].mean()
 Out[1910]: 7053.819247997828
 ```
+Stick length data distribution
 ```
-Mean machine hours
 In [1946]: df['Stick_Length'].value_counts(dropna=False)
 Out[1949]:
 NaN                    310437
@@ -29,16 +33,13 @@ None or Unspecified     81539
 Name: Stick_Length, dtype: int64
 ```
 
-Handling features with missing values.
-Notation:
-XGB - XGBoost
-cat - category
-var - variable
-catvar - categorical variable
+How to handle features with missing values:
+(excluding imputing missing value with e.g. mean or using nearest neighbors)
+
 none_unspec - 'None or Unspecified'
 cat counts excludes NaN and none_unspec
 
-(A) For vars with 1 cat:
+(A) For variables (vars) with 1 category (cat):
 - Any catvar must have 2 cats. Create cat N for none_unspec
 - Order cats (X, N)
 - XGB decides what to do with NaN
@@ -65,4 +66,11 @@ XGB decides at training time whether missing values go into the right or left no
 It chooses which to minimise loss.
 Note that the gblinear booster treats missing values as zeros.
 
-Example statistics:
+P.S:
+The above procedure was not performed for the reported result, due to insufficient RAM
+to store data-set in memory.
+
+Further possible improvements:
+- Use large unordered categories as-is (even if incorrect); convert small cats to one-hot
+- Parse horsepower or torque from `fiProductClassDesc`
+- Use month and day of week (i.e. 'Monday') from 'saledate', not just year
