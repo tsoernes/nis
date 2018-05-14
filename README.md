@@ -37,7 +37,8 @@ How to handle features with missing values:
 (excluding imputing missing value with e.g. mean or using nearest neighbors)
 
 none_unspec - 'None or Unspecified'
-cat counts excludes NaN and none_unspec
+
+(category counts exclude NaN and none_unspec)
 
 (A) For variables (vars) with 1 category (cat):
 - Any catvar must have 2 cats. Create cat N for none_unspec
@@ -64,7 +65,6 @@ cat counts excludes NaN and none_unspec
 
 XGB decides at training time whether missing values go into the right or left node.
 It chooses which to minimise loss.
-Note that the gblinear booster treats missing values as zeros.
 
 P.S:
 The above procedure was not performed for the reported result, due to insufficient RAM
