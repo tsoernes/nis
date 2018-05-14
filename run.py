@@ -23,8 +23,8 @@ def print_losses(pred_y):
     log_r2 = r2_score(y_true=log_test_y, y_pred=log_pred_y)
     log_mse = mean_squared_error(y_true=log_test_y, y_pred=log_pred_y)
     log_rmse = np.sqrt(log_mse)
-    print(f"Loss/log-loss:\nR2:{r2}/{log_r2}\n"
-          f"MSE:{mse}/{log_mse}\nRMSE:{rmse}/{log_rmse}")
+    print(f"Loss/log-loss:\nR2:{r2:.4f}/{log_r2:.4f}\n"
+          f"MSE:{mse:.4f}/{log_mse:.4f}\nRMSE:{rmse:.4f}/{log_rmse:.4f}")
 
 
 def gridsearch():
@@ -53,7 +53,8 @@ def gridsearch():
     print(optimized_GBM.grid_scores_)
 
 
-reg = xgb.XGBRegressor(missing=0, max_depth=12, min_child_weight=3, eta=0.1, n_jobs=-1)
-reg.fit(train_df, train_y)
+reg = xgb.XGBRegressor(
+    n_estimators=200, missing=0, max_depth=12, min_child_weight=3, eta=0.1, n_jobs=-1)
+reg = reg.fit(train_df, train_y)
 pred_y = reg.predict(test_df)
 print_losses(pred_y)

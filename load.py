@@ -10,7 +10,7 @@ from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
                       unordered_multi_cats)
 
 
-def load_prep(use_codes=True, oh=False):
+def load_prep(use_codes=True, oh=False, verbose=False):
     """
     use_codes: Convert categories to their int8 code representation
     oh: One-hot encode unordered multi-cat variables (implies use_codes)"""
@@ -99,7 +99,8 @@ def load_prep(use_codes=True, oh=False):
             # Put NaN as middle ordered cat. See:
             # http://fastml.com/converting-categorical-data-into-numbers-with-pandas-and-scikit-learn/
             order = (nn_unique[0], nan_cat, nn_unique[1])
-        print(f"{col} as ordered cat with order {order}")
+        if verbose:
+            print(f"{col} as ordered cat with order {order}")
         convert_to_ocat_ip(df, col, order)
         df[col] = df[col].fillna(nan_cat)
 
@@ -139,12 +140,14 @@ def load_prep(use_codes=True, oh=False):
                 has_nan = not len(unique) == len(nn_unique)
                 codes = df[col].unique()
                 has_nan_code = 0 in codes
-                print(f"\n{col} NanVals:{has_nan}, NanCat:{has_nan_cat}, "
-                      f"NanCode:{has_nan_code}\nCats:{unique}\nCodes:{codes}")
+                if verbose:
+                    print(f"\n{col} NanVals:{has_nan}, NanCat:{has_nan_cat}, "
+                          f"NanCode:{has_nan_code}\nCats:{unique}\nCodes:{codes}")
 
     # One-hot encode non-ordered cats
     if oh:
-        print("Constructing one-hots")
+        if verbose:
+            print("Constructing one-hots")
         prefixes = list(map(lambda s: "oh-" + s, unordered_multi_cats))
         df = pd.get_dummies(df, columns=unordered_multi_cats, prefix=prefixes)
         # df[col] = df[col].astype(np.bool)
