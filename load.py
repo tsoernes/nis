@@ -152,7 +152,7 @@ def load_prep(use_codes=True, oh=False, verbose=False):
         # df[col] = df[col].astype(np.bool)
         df = df.to_sparse(fill_value=0)
         return df
-    df = df.reset_index()
+    # df = df.reset_index()
     return df
 
 
