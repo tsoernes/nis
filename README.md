@@ -6,39 +6,12 @@ MSE:47928668.7609/0.0441
 RMSE:6923.0534/0.2100
 ```
 
-Some statistics:
-```
-In [1889]: df['MachineHoursCurrentMeter'].max()
-Out[1889]: 2483300.0
-```
-Mean machine hours
-```
-In [1910]: df['MachineHoursCurrentMeter'][df['MachineHoursCurrentMeter'] > 0].mean()
-Out[1910]: 7053.819247997828
-```
-Stick length data distribution
-```
-In [1946]: df['Stick_Length'].value_counts(dropna=False)
-Out[1949]:
-NaN                    310437
-None or Unspecified     81539
-9' 6"                    5832
-10' 6"                   3519
-11' 0"                   1601
-9' 10"                   1463
-9' 8"                    1462
-9' 7"                    1423
-12' 10"                  1087
-...
-Name: Stick_Length, dtype: int64
-```
 
 How to handle features with missing values:
 (excluding imputing missing value with e.g. mean or using nearest neighbors)
 
-none_unspec - 'None or Unspecified'
-
-(category counts exclude NaN and none_unspec)
+(none_unspec abbreviates 'None or Unspecified'
+category counts exclude NaN and none_unspec)
 
 (A) For variables (vars) with 1 category (cat):
 - Any catvar must have 2 cats. Create cat N for none_unspec
