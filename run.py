@@ -1,9 +1,12 @@
 import numpy as np
-import pandas as pd
-import sklearn as skl
+import pickle
+# import pandas as pd
+# import sklearn as skl
 import xgboost as xgb  # noqa
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, train_test_split
+from xgboost import plot_importance
+from matplotlib import pyplot
 
 from load import load_prep
 
@@ -56,5 +59,11 @@ def gridsearch():
 reg = xgb.XGBRegressor(
     n_estimators=200, missing=0, max_depth=12, min_child_weight=3, eta=0.1, n_jobs=-1)
 reg = reg.fit(train_df, train_y)
+
 pred_y = reg.predict(test_df)
 print_losses(pred_y)
+
+pickle.dump(reg, open("model.pickle", "wb"))
+print(reg.feature_importances_)
+plot_importance(reg)
+pyplot.show()

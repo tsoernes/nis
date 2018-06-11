@@ -1,19 +1,18 @@
 import numpy as np
 import pandas as pd
 
-from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches,
-                        nan_cat, no_nans, none_cat, none_to_nan_ip,
-                        none_unspec, not_applicable, sparse_dummies,
-                        string_clean_ip)
-from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats,
-                      none_unspec_cats, ordered_multi_cats,
-                      unordered_multi_cats)
+from load_utils import (convert_num_to_ocat_ip, convert_to_ocat_ip, get_inches, nan_cat,
+                        no_nans, none_cat, none_to_nan_ip, none_unspec, not_applicable,
+                        sparse_dummies, string_clean_ip)
+from vartypes import (bin_cats, continuous_vars, no_none_unspec_cats, none_unspec_cats,
+                      ordered_multi_cats, unordered_multi_cats)
 
 
 def load_prep(use_codes=True, oh=False, verbose=False):
     """
     use_codes: Convert categories to their int8 code representation
-    oh: One-hot encode unordered multi-cat variables (implies use_codes)"""
+    oh: One-hot encode unordered multi-cat variables (implies use_codes)
+    """
 
     df = pd.read_pickle('trainvalid-wdates.pkl')
 
