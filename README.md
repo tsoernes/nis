@@ -5,10 +5,11 @@ R2:0.9121/0.9090
 MSE:47928668.7609/0.0441
 RMSE:6923.0534/0.2100
 ```
+See [the jupyter notebook](https://github.com/tsoernes/nis/blob/master/Untitled.ipynb)
 
 
-How to handle features with missing values:
-(excluding imputing missing value with e.g. mean or using nearest neighbors)
+For this dataset, this is how missing values should be handled:
+(excluding imputing missing values with e.g. mean or using nearest neighbors)
 
 (none_unspec abbreviates 'None or Unspecified'
 category counts exclude NaN and none_unspec)
